@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Forge Studio — Build Faster, Ship Sooner</title>
+  <meta name="description" content="A no-UI autoplay background video hero with crisp overlaid titles, a readable scrim, and a static-poster fallback for reduced motion." />
+  <style>
+    :root {
+      --ink: #f6f8ff;
+      --muted: #c3cbe6;
+      --accent: #7c5cff;
+      --accent-2: #2ec4b6;
+      --maxw: 1120px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body { margin: 0; padding: 0; }
+
+    body {
+      font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, Helvetica, Arial, sans-serif;
+      color: var(--ink);
+      background: #070b1a;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ---- Hero shell -------------------------------------------------- */
+    .hero {
+      position: relative;
+      min-height: 100vh;
+      min-height: 100svh;          /* account for mobile browser chrome */
+      display: grid;
+      align-items: center;
+      overflow: hidden;
+      isolation: isolate;          /* keep blend/stacking local to hero */
+    }
+
+    /* Full-bleed media layer (video + poster share this frame) */
+    .hero__media {
+      position: absolute;
+      inset: 0;
+      z-index: -2;
+      overflow: hidden;
+    }
+
+    .hero__video,
+    .hero__poster {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;           /* cover the hero at any aspect ratio */
+      object-position: center;
+    }
+
+    /* Poster is the reduced-motion / no-video-support fallback.
+       Hidden by default; the <video>'s own poster attr covers loading. */
+    .hero__poster { display: none; }
+
+    /* Readability scrim: darker at the bottom-left where the copy sits,
+       plus a gentle overall darken so white text stays legible over any
+       frame of the moving video. */
+    .hero__scrim {
+      position: absolute;
+      inset: 0;
+      z-index: -1;
+      background:
+        linear-gradient(90deg, rgba(5, 8, 20, 0.80) 0%, rgba(5, 8, 20, 0.45) 40%, rgba(5, 8, 20, 0.10) 70%, rgba(5, 8, 20, 0) 100%),
+        linear-gradient(0deg, rgba(5, 8, 20, 0.72) 0%, rgba(5, 8, 20, 0.15) 45%, rgba(5, 8, 20, 0.35) 100%);
+    }
+
+    /* ---- Overlaid content ------------------------------------------- */
+    .hero__inner {
+      width: 100%;
+      max-width: var(--maxw);
+      margin: 0 auto;
+      padding: clamp(1.5rem, 4vw, 4rem);
+    }
+
+    .eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.8rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      padding: 0.4rem 0.8rem;
+      border-radius: 999px;
+      backdrop-filter: blur(6px);
+    }
+
+    .eyebrow .dot {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--accent-2);
+      box-shadow: 0 0 10px var(--accent-2);
+    }
+
+    .hero h1 {
+      margin: 1.1rem 0 0;
+      font-size: clamp(2.4rem, 6.4vw, 4.6rem);
+      line-height: 1.04;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      max-width: 15ch;
+      /* subtle text shadow is a second line of defence for contrast */
+      text-shadow: 0 2px 24px rgba(0, 0, 0, 0.55);
+    }
+
+    .hero h1 .grad {
+      background: linear-gradient(100deg, var(--accent) 0%, var(--accent-2) 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    .hero p.sub {
+      margin: 1.2rem 0 0;
+      font-size: clamp(1.02rem, 2.1vw, 1.3rem);
+      line-height: 1.6;
+      color: var(--muted);
+      max-width: 46ch;
+      text-shadow: 0 1px 14px rgba(0, 0, 0, 0.5);
+    }
+
+    .cta-row {
+      margin-top: 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.9rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 0.85rem 1.5rem;
+      border-radius: 12px;
+      text-decoration: none;
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    }
+
+    .btn--primary {
+      color: #0a0f22;
+      background: linear-gradient(100deg, var(--accent) 0%, var(--accent-2) 100%);
+      box-shadow: 0 10px 30px rgba(124, 92, 255, 0.35);
+    }
+    .btn--primary:hover { transform: translateY(-2px); box-shadow: 0 14px 38px rgba(124, 92, 255, 0.5); }
+
+    .btn--ghost {
+      color: var(--ink);
+      background: rgba(255, 255, 255, 0.07);
+      border-color: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(6px);
+    }
+    .btn--ghost:hover { background: rgba(255, 255, 255, 0.14); transform: translateY(-2px); }
+
+    /* Small status chip (bottom-right) that reflects the actual media mode.
+       Useful as a live readout; set by JS. */
+    .mode-chip {
+      position: absolute;
+      right: 1rem;
+      bottom: 1rem;
+      z-index: 2;
+      font-size: 0.72rem;
+      letter-spacing: 0.04em;
+      color: var(--muted);
+      background: rgba(5, 8, 20, 0.55);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      padding: 0.35rem 0.7rem;
+      backdrop-filter: blur(6px);
+    }
+
+    /* ---- Reduced-motion fallback: show the still poster, hide video --- */
+    @media (prefers-reduced-motion: reduce) {
+      .hero__video { display: none; }
+      .hero__poster { display: block; }
+      .btn { transition: none; }
+    }
+  </style>
+</head>
+<body>
+  <section class="hero" aria-label="Forge Studio hero">
+    <div class="hero__media">
+      <!-- No-chrome autoplay background video: muted + loop + playsinline +
+           autoplay are all required for silent inline autoplay across browsers.
+           The poster attribute shows a still while the video buffers. -->
+      <video
+        class="hero__video"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="auto"
+        poster="assets/hero-poster.jpg"
+        aria-hidden="true">
+        <source src="assets/hero.webm" type="video/webm" />
+        <source src="assets/hero.mp4" type="video/mp4" />
+      </video>
+
+      <!-- Static fallback image shown when the user prefers reduced motion
+           (or when <video> is unsupported). -->
+      <img
+        class="hero__poster"
+        src="assets/hero-poster.jpg"
+        alt="Abstract aurora of violet, teal and gold light over a deep navy field." />
+    </div>
+
+    <div class="hero__scrim" aria-hidden="true"></div>
+
+    <div class="hero__inner">
+      <span class="eyebrow"><span class="dot"></span> Forge Studio</span>
+      <h1>Build faster.<br /><span class="grad">Ship sooner.</span></h1>
+      <p class="sub">
+        We design and ship production web apps, automations and AI workflows for teams
+        that would rather launch this quarter than next year.
+      </p>
+      <div class="cta-row">
+        <a class="btn btn--primary" href="#start">Start a project →</a>
+        <a class="btn btn--ghost" href="#work">See our work</a>
+      </div>
+    </div>
+
+    <span class="mode-chip" id="modeChip" aria-live="polite">loading…</span>
+  </section>
+
+  <script>
+    // Progressive enhancement around the browser's native autoplay:
+    // 1. Respect prefers-reduced-motion at runtime (CSS already hides the
+    //    video; here we also pause it so it never decodes in the background).
+    // 2. Reflect the real media state in the status chip.
+    (function () {
+      var video = document.querySelector('.hero__video');
+      var chip = document.getElementById('modeChip');
+      var mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+      function applyMotionPreference() {
+        if (mq.matches) {
+          // Static poster mode: make sure the video is not playing.
+          video.removeAttribute('autoplay');
+          try { video.pause(); } catch (e) {}
+          video.currentTime = 0;
+          chip.textContent = 'reduced motion · static poster';
+        } else {
+          // Motion mode: ensure autoplay actually started (some browsers
+          // need an explicit play() nudge after load).
+          var p = video.play();
+          if (p && typeof p.catch === 'function') { p.catch(function () {}); }
+          chip.textContent = 'autoplay · muted · looping';
+        }
+      }
+
+      applyMotionPreference();
+      // React if the user flips the OS/browser setting while the page is open.
+      if (mq.addEventListener) {
+        mq.addEventListener('change', applyMotionPreference);
+      } else if (mq.addListener) {
+        mq.addListener(applyMotionPreference);
+      }
+
+      // Keep the chip honest once real playback is confirmed.
+      video.addEventListener('playing', function () {
+        if (!mq.matches) chip.textContent = 'autoplay · muted · looping';
+      });
+    })();
+  </script>
+</body>
+</html>
