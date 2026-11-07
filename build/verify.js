@@ -4,7 +4,7 @@
 // top, and that prefers-reduced-motion:reduce swaps to the static poster.
 const { chromium } = require('playwright');
 
-const URL = 'http://localhost:8061/index.html';
+const URL = process.argv[2] || 'http://localhost:8061/index.html';
 
 async function run() {
   const browser = await chromium.launch({ channel: 'chrome', headless: true });
